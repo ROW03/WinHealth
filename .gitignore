@@ -1,0 +1,6 @@
+# Ignore the active environment configuration
+config.ini
+# Ignore the Python virtual environment folder
+.venv/
+__pycache__/
+*.pyc
