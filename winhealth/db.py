@@ -11,12 +11,12 @@ def save_snapshot_to_db(payload):
         values (?, ?, ?, ?, ?, ?);
         """,
         (
-            payload("pc_name"),
-            payload("os_type"),
-            payload("cpu_usage_pct"),
-            payload("total_ram_gb"),
-            payload("free_ram_gb"),
-            payload("disk_free_gb")
+            payload["pc_name"],
+            payload["os_type"],
+            payload["cpu_usage_pct"],
+            payload["total_ram_gb"],
+            payload["free_ram_gb"],
+            payload["disk_free_gb"]
         )
     )
     conn.commit()
