@@ -36,6 +36,15 @@ def init_db():
     conn.close()
     print("Database is fully initialized and updated.")
 
+    conn.execute("""
+        CREATE VIEW IF NOT EXISTS v_LowDiskAlerts AS
+        SELECT pc_name, MIN((disk_free_gb / total_disk_gb) * 100) AS min_free_pct
+        FROM Snapshots
+        WHERE timestamp >= datetime('now', '-1 day')
+        GROUP BY pc_name
+        HAVING min_free_pct < 10;
+    """)
+    
 def collect_metrics():
     # Grab data from the two external powershell scripts
     system_data = run_powershell_collector("scripts/Get-SystemSnapshot.ps1")
