@@ -3,6 +3,15 @@ import sqlite3
 from collectors import run_powershell_collector
 from db import save_snapshot_to_db
 import reports
+from db import save_snapshot_to_db, purge_old_snapshots
+import logging
+
+logging.basicConfig(
+    filename="winhealth.log", 
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 def init_db():
     conn = sqlite3.connect("WinHealth.db")
@@ -32,9 +41,6 @@ def init_db():
         conn.execute("ALTER TABLE Snapshots ADD COLUMN top_process TEXT;")
     if "process_working_set_mb" not in existing_columns:
         conn.execute("ALTER TABLE Snapshots ADD COLUMN process_working_set_mb REAL;")
-        
-    conn.close()
-    print("Database is fully initialized and updated.")
 
     conn.execute("""
         CREATE VIEW IF NOT EXISTS v_LowDiskAlerts AS
@@ -44,7 +50,10 @@ def init_db():
         GROUP BY pc_name
         HAVING min_free_pct < 10;
     """)
-    
+
+    conn.close()
+    print("Database layout and views are fully initialized and updated.")
+
 def collect_metrics():
     # Grab data from the two external powershell scripts
     system_data = run_powershell_collector("scripts/Get-SystemSnapshot.ps1")
@@ -72,18 +81,28 @@ def show_reports_menu():
 
 def main():
     if len(sys.argv) < 2:
-        print("choose: inti-db, collect")
+        print("choose: init-db, collect, report or purge")
         user_choice = input("Enter your choice: ").strip().lower()
     else:
         user_choice = sys.argv[1].lower()
+
     if user_choice == "init-db":
         init_db()
     elif user_choice == "collect":
         collect_metrics()
     elif user_choice == "report":
         show_reports_menu()
+    elif user_choice == "purge":
+        days_input = input("Enter the number of days to keep snapshots (e.g., 30): ").strip()
+        try:
+            days = int(days_input)
+            deleted = purge_old_snapshots(days)
+            logging.info(f"Purged {deleted} snapshots older than {days} days.")
+        except ValueError:
+            print("Please enter a valid number of days.")
+            logging.warning(f"Invalid input for days: {days_input}")
     else:
-        print("Invalid choice. Please choose init-db or collect or report.")
+        print("Invalid choice. Please choose init-db, collect, report or purge.")
 
 if __name__ == "__main__":
     main()
