@@ -1,7 +1,9 @@
 import sqlite3
+from typing import Any
 
-def save_snapshot_to_db(payload):
-    # Connect to a local file database 
+
+def save_snapshot_to_db(payload: dict[str, Any]) -> None:
+    # Connect to a local file database
     conn = sqlite3.connect("WinHealth.db")
     cursor = conn.cursor()
 
@@ -16,20 +18,21 @@ def save_snapshot_to_db(payload):
             payload["cpu_usage_pct"],
             payload["total_ram_gb"],
             payload["free_ram_gb"],
-            payload["disk_free_gb"]
-        )
+            payload["disk_free_gb"],
+        ),
     )
     conn.commit()
     conn.close()
 
-def purge_old_snapshots(days):
+
+def purge_old_snapshots(days: int) -> int:
     """Deletes snapshots older than the specified number of days."""
     conn = sqlite3.connect("WinHealth.db")
     cursor = conn.cursor()
 
     # to delete rows older than a certain number of days
     query = """DELETE FROM Snapshots WHERE timestamp < datetime('now', ?);"""
-    timeframe = f'-{days} day'
+    timeframe = f"-{days} day"
 
     cursor.execute(query, (timeframe,))
     deleted_count = cursor.rowcount

@@ -1,21 +1,22 @@
 import sys
 import sqlite3
-from collectors import run_powershell_collector
-from db import save_snapshot_to_db
-import reports
-from db import save_snapshot_to_db, purge_old_snapshots
 import logging
 
+from winhealth import reports
+from winhealth.collectors import run_powershell_collector
+from winhealth.db import purge_old_snapshots, save_snapshot_to_db
+
 logging.basicConfig(
-    filename="winhealth.log", 
-    level=logging.INFO, 
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt="%Y-%m-%d %H:%M:%S"
+    filename="winhealth.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-def init_db():
+
+def init_db() -> None:
     conn = sqlite3.connect("WinHealth.db")
-    
+
     # Base table creation
     conn.execute("""
         CREATE TABLE IF NOT EXISTS Snapshots (
@@ -29,11 +30,11 @@ def init_db():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     """)
-    
+
     # Get a list of columns that currently exist in the database
     cursor = conn.execute("PRAGMA table_info(Snapshots);")
     existing_columns = [row[1] for row in cursor.fetchall()]
-    
+
     # If a column is missing, add it dynamically
     if "total_disk_gb" not in existing_columns:
         conn.execute("ALTER TABLE Snapshots ADD COLUMN total_disk_gb REAL;")
@@ -54,22 +55,24 @@ def init_db():
     conn.close()
     print("Database layout and views are fully initialized and updated.")
 
-def collect_metrics():
+
+def collect_metrics() -> None:
     # Grab data from the two external powershell scripts
     system_data = run_powershell_collector("scripts/Get-SystemSnapshot.ps1")
     disk_data = run_powershell_collector("scripts/Get-DiskInventory.ps1")
-    
+
     combined_payload = {**system_data, **disk_data}
 
     save_snapshot_to_db(combined_payload)
     print("Data collected and saved successfully")
 
-def show_reports_menu():
+
+def show_reports_menu() -> None:
     print("1. Low Disk Report (Last 24h < 10% Free)")
     print("2. Top 5 Processes by Memory (Last 7 Days)")
     print("3. Hourly CPU Load Profile")
     choice = input("Select a report number (1-3):").strip()
-    
+
     if choice == "1":
         reports.run_low_disk_report()
     elif choice == "2":
@@ -79,7 +82,8 @@ def show_reports_menu():
     else:
         print("Invalid choice. Please choose 1, 2, or 3.")
 
-def main():
+
+def main() -> None:
     if len(sys.argv) < 2:
         print("choose: init-db, collect, report or purge")
         user_choice = input("Enter your choice: ").strip().lower()
@@ -93,7 +97,9 @@ def main():
     elif user_choice == "report":
         show_reports_menu()
     elif user_choice == "purge":
-        days_input = input("Enter the number of days to keep snapshots (e.g., 30): ").strip()
+        days_input = input(
+            "Enter the number of days to keep snapshots (e.g., 30): "
+        ).strip()
         try:
             days = int(days_input)
             deleted = purge_old_snapshots(days)
@@ -104,6 +110,6 @@ def main():
     else:
         print("Invalid choice. Please choose init-db, collect, report or purge.")
 
+
 if __name__ == "__main__":
     main()
-    

@@ -1,9 +1,11 @@
 import sqlite3
 
-def get_db_connection():
+
+def get_db_connection() -> sqlite3.Connection:
     return sqlite3.connect("WinHealth.db")
 
-def run_low_disk_report():
+
+def run_low_disk_report() -> None:
     """Hosts with less than 10% disk free in the last 24 hours."""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -19,7 +21,8 @@ def run_low_disk_report():
         print(f"Host: {row[0]} | Min Free %: {row[1]:.2f}%")
     conn.close()
 
-def run_top_processes_report():
+
+def run_top_processes_report() -> None:
     """Top 5 processes by average memory use over the last 7 days."""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -36,7 +39,8 @@ def run_top_processes_report():
         print(f"Host: {row[0]} | Process: {row[1]} | Avg Memory: {row[2]:.2f} MB")
     conn.close()
 
-def run_hourly_cpu_profile():
+
+def run_hourly_cpu_profile() -> None:
     """Hour-of-day CPU load profile per host (replaces DATEPART)."""
     conn = get_db_connection()
     cursor = conn.cursor()

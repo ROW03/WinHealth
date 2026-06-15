@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+addopts = "--cov=winhealth --cov-report=term-missing --cov-config=pyproject.toml"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: integration tests mapping component orchestration"
+]
+
+[tool.coverage.run]
+source = ["winhealth"]
+omit = ["tests/*", ".venv/*"]
+
+[tool.coverage.report]
+show_missing = true
